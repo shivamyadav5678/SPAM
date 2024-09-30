@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Spam Predictor</title>
+    <style>
+        /* Initial neutral background */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #e0e0e0; /* Neutral color */
+            transition: background-color 0.5s;
+        }
+
+        /* Glowing effects for spam/not spam */
+        body.spam-bg {
+            background-color: #ff4f4f;
+            box-shadow: 0 0 20px 10px rgba(255, 79, 79, 0.7);
+        }
+
+        body.not-spam-bg {
+            background-color: #32cd32;
+            box-shadow: 0 0 20px 10px rgba(50, 205, 50, 0.7);
+        }
+
+        /* Container with increased height and width */
+        .container {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            width: 50%;
+            height: 60%;
+            position: relative;
+            text-align: center;
+            transition: height 0.3s ease, width 0.3s ease;
+        }
+
+        /* Heading Styling */
+        h1 {
+            font-size: 65px;
+            color: #333;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        /* Textarea Styling */
+        textarea {
+            width: 90%;
+            height: 60%;
+            padding: 15px;
+            font-size: 28px;
+            border: 2px solid #0083b0;
+            border-radius: 8px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        button {
+            background-color: #00b4db;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            outline: none;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-top: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Top-right corner button for resetting form */
+        .corner-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f0f0f0;
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .corner-button:hover {
+            background-color: #ddd;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 12px;
+            font-size: 28px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .spam {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .not-spam {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spam Predictor</h1>
+        <textarea id="messageInput" placeholder="Type your message here..." oninput="validateInput()"></textarea>
+        <button id="predictButton" disabled onclick="predictSpam()">Predict</button>
+        <div id="result" class="result"></div>
+
+        <!-- X button to reset the form -->
+        <button class="corner-button" onclick="resetForm()">✖</button>
+    </div>
+
+    <script>
+        const predictButton = document.getElementById('predictButton');
+        const messageInput = document.getElementById('messageInput');
+        const resultDiv = document.getElementById('result');
+
+        // Enable or disable button based on input
+        function validateInput() {
+            if (messageInput.value.trim() !== "") {
+                predictButton.disabled = false;
+            } else {
+                predictButton.disabled = true;
+                resetPrediction(); // Automatically reset prediction when input is cleared
+            }
+        }
+
+        // Make the prediction by sending the message to the server
+        function predictSpam() {
+            const message = messageInput.value;
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result) {
+                    displayResult(data.result === 'spam');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Display the result on the UI and change background color
+        function displayResult(isSpam) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result'; // Reset class
+
+            if (isSpam) {
+                resultDiv.textContent = 'This message is likely SPAM.';
+                resultDiv.classList.add('spam');
+                document.body.classList.add('spam-bg');
+            } else {
+                resultDiv.textContent = 'This message is NOT SPAM.';
+                resultDiv.classList.add('not-spam');
+                document.body.classList.add('not-spam-bg');
+            }
+        }
+
+        // Reset the form and background when the corner button is clicked
+        function resetForm() {
+            messageInput.value = '';
+            resetPrediction();
+        }
+
+        // Reset prediction result and background to neutral
+        function resetPrediction() {
+            resultDiv.style.display = 'none';
+            resultDiv.className = 'result'; // Reset result styles
+            document.body.className = ''; // Reset to neutral background
+            predictButton.disabled = true;
+        }
+    </script>
+</body>
+</html>
